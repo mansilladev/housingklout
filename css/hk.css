@@ -1,0 +1,84 @@
+body {
+    font-family: Helvetica;
+    font-size: 10pt;
+}
+
+.hkTitle {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 25pt;
+}
+
+.pinMsg {
+    color: black;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10pt;
+}
+
+#bodyTop {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.titleSubText {
+    font-family: "Century Gothic";
+    font-size: 10pt;
+    position: absolute;
+    margin-top: -10px;
+    margin-left: 5px;
+}
+
+#bTleft {
+    position: relative;
+    float: left;
+    width: 49%;
+    display: inline-block;
+}
+
+#bTright {
+    position: relative;
+    float: right;
+    width: 49%;
+    text-align: right;
+    display: inline-block;
+}
+
+#formData {
+    display: inline-block;
+}
+
+label {
+    width: 150px;
+    float: left;
+    text-align: right;
+    margin-right: 0.5em;
+    display: block;
+}
+
+#lowPrice, #highPrice, #lowKlout {
+    width: 50px;
+}
+
+p {
+    margin-top: -5px;
+}
+
+input {
+	width: 175px;
+}
+
+#footer {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
+    color: #777777;
+    margin-top: 50px;
+}
+
+#footer a {
+  color: #777777;
+}
+
+.tip {
+    background: url(./h150.png) repeat-x;
+}
+

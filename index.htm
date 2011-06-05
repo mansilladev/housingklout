@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<!--
+HousingKlout
+Open Source Initiative OSI - The MIT License (MIT):Licensing
+The MIT License (MIT)
+Copyright (c) 2011 Neil Mansilla
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+----
+All logos represented are the intellectual property of the respective owners, including:
+Mashery, deCarta, Twitter, 3Taps and Klout.
+-----
+Now, legalities aside, this was a hackathon entry for the 3Taps hackathon, created on
+4/30/2011. That being said, it could probably be optimized, feature enhanced, and refactored
+to the umpteenth degree (which you're welcome to do). So, sloppy as it may be, it was selected
+as the winner!
+It's an all-JavaScript hack that does the following:
+1. Searches for Craigslist apt/rental-home listings in San Francisco via 3Taps API.
+2. From the 3Taps payload, we snag the lat/long of each listing using either:
+(a) the Google Maps "loc" parameter from Craigslist listing and pull the lat/lon
+via the Google Maps API [first choice]
+or
+(b) the lat/lon meta-data from the 3Taps payload [if (a) is not available]
+3. We use the Twitter search API to find all geo tweets within a radius of that lat/long
+(a) we also plot a little pink circle/dot on the DeCarta map
+4. We find the average Klout score for the twitter-er's above
+5. If it meets our minimum Klout score criteria, we plot it on the DeCarta map with
+a pin, a description, and a hyperlinked title (back to Craigslist)
+// -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>HousingKlout - The App To Find Out If Your New Home Is Hip!</title>
+        <script language="JavaScript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js">
+        </script>
+        <!-- 3Taps JavaScript SDK -->
+        <script language="JavaScript" src="./js/3taps_new.js">
+        </script>
+        <!-- DeCarta JS SDK - pulled it from their docs/demo scripts -->
+        <script language="JavaScript" src="./js/deCarta.js">
+        </script>
+        <script language="JavaScript" src="./js/CONFIG.js">
+        </script>
+        <script src="http://cdn.jquerytools.org/1.2.5/full/jquery.tools.min.js?foo">
+        </script>
+        <!-- Google Maps parseaddress jquery plugin - handy to take a string
+        that contains some address information and get the full geo info
+        Pulled from: http://blog.nerdburn.com/entries/code/how-to-parse-google-maps-returned-address-data-a-simple-jquery-plugin -->
+        <script src="./js/parseaddress.jquery.js">
+        </script>
+        <!-- Google Maps - you'll need your own key.. you can get one free at:
+          http://code.google.com/apis/maps/signup.html -->
+        <script src="http://maps.google.com/maps?file=api&v=2.x&key=ABQIAAAA9Hrr6tkKuGxfRHuyIpietBQ7Xg9Ta2yeHpAqGBGjsEdHdZsJLRTluI9qA-Kn-VHt_6Rh6NRVWIR6Ew" type="text/javascript">
+        </script>
+        <script src="./js/hk.js">
+        </script>
+        <link media="all" type="text/css" rel="stylesheet" href="./css/hk.css" />
+    </head>
+    <BODY onload="init();bigger();">
+        <!-- "addy" is just placeholder variable used for the
+        parseaddress jquery plugin -->
+        <div id="bodyTop">
+            <div id="bTleft">
+                <img src="./img/hk.png" />
+                <br/>
+                <span class="titleSubText">The App To Find Out If Your New Home Is Hip!</span>
+            </div>
+            <div id="bTright">
+                <a href="http://developer.mashery.com" target="_blank"><img border="0" src="./img/mashery.png" /></a>&nbsp;<a href="http://register.3taps.com/member/register" target="_blank"><img border="0" style="margin-bottom: 5px;" src="./img/3taps_104x62.png" /></a>&nbsp;<a href="http://developer.klout.com/" target="_blank"><img border="0" style="margin-bottom: 10px;" src="./img/klout.png" /></a>&nbsp;<a href="http://developer.decarta.com" target="_blank"><img border="0" style="margin-bottom: 15px;" src="./img/decarta_160x44.png" /></a>&nbsp;<a href="http://dev.twitter.com" target="_blank"><img style="margin-bottom: 10px;" src="./img/twitter.png" /></a>
+            </div>
+        </div>
+        <div id="formData">
+            <input type="hidden" name="addy" id="addy" value="" />
+            <p>
+                <label for="3TapsKey">
+                    3Taps API Key
+                </label>
+                <input type="text" id="3TapsKey" title="Your 3Taps API key - need one? <a href='http://register.3taps.com/member/register' target='_blank'>Click here</a> to register for one. It's free." />
+            </p>
+            <p>
+                <label for="KloutKey">
+                    Klout API Key
+                </label>
+                <input type="text" id="KloutKey" title="Your Klout API Key - need one? <a href='http://developer.klout.com/' target='_blank'>Click here</a> to register for one. It's free." />
+            </p>
+            <p>
+                <label for="priceRange">
+                    Price Range ($)
+                </label>
+                <span id="priceRange"><input type="number" id="lowPrice" value="1500" title="" />- <input title="" type="text" id="highPrice" value="8500" /></span>
+            </p>
+            <p>
+                <label for="lowKlout">
+                    Minimum Klout Score
+                </label>
+                <input name="lowKlout" type="number" min="0" max="99" id="lowKlout" value="25" title="Minimum Klout Score (from 0 to 99)"/>
+            </p>
+			<p>
+				<label for="fresh">&nbsp;</label>
+			</p>
+            <button id="fresh" onclick="HK();">
+                Submit &gt;&gt;
+            </button>
+        </div>
+        <div id="map" style="width:800px; height:500px;position:relative;display:none;">
+        </div>
+        <canvas id="canvas">
+        </canvas>
+        <div id="apiKeys" style="display: none;" class="window">
+        </div>
+        <div id="footer">
+            Copyright &copy; 2011 Neil Mansilla
+            <a href="http://twitter.com/mansilladev" target="_blank">@mansillaDEV</a>
+        </div>
+        <script>
+            // Tool Tips for the API Keys
+            $(function(){
+                $("#3TapsKey,#KloutKey,#lowKlout").tooltip({
+                
+                    // place tooltip on the right edge
+                    position: "center right",
+                    
+                    // a little tweaking of the position
+                    offset: [2, 10],
+                    
+                    // use the built-in fadeIn/fadeOut effect
+                    effect: "fade",
+                    
+                    // custom opacity setting
+                    opacity: 0.7
+                
+                });
+            });
+        </script>
+    </BODY>
+</HTML>
